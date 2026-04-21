@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SAI BMN Sensus</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+  </style>
+</head>
+<body class="pb-10">
+  
+  <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
+    <div class="max-w-md mx-auto flex items-center"><i class="ph ph-scan text-2xl mr-2"></i><h1 class="text-xl font-bold">SAI BMN Sensus</h1></div>
+  </header>
+
+  <div id="notification-container" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 w-[90%] max-w-sm pointer-events-none"></div>
+
+  <main class="max-w-md mx-auto mt-4 px-4">
+    <div class="flex border-b border-gray-200 mb-6 bg-white rounded-t-xl">
+      <button id="tabNUP" class="w-1/2 py-3 text-center tab-active transition" onclick="switchTab('nup')">Data BMN NUP</button>
+      <button id="tabNonNUP" class="w-1/2 py-3 text-center text-gray-500 transition" onclick="switchTab('nonnup')">Data NON NUP</button>
+    </div>
+
+    <form id="formNup" class="space-y-5 bg-white p-5 rounded-xl shadow-sm border border-gray-100" onsubmit="handleFormSubmit(event, 'formNup')">
+      <input type="hidden" name="action" value="submitNUP">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Kode Barang</label><input type="text" name="kdBarang" id="inputKdBarang" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm"></div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">NUP</label>
+          <div class="flex gap-2">
+            <input type="text" name="nup" id="inputNup" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <button type="button" onclick="autoFillNup()" class="bg-blue-50 text-blue-600 px-3 rounded-lg border border-blue-100 hover:bg-blue-100 flex items-center justify-center"><i class="ph ph-magnifying-glass text-lg"></i></button>
+          </div>
+        </div>
+      </div>
+      <div><label class="block text-xs font-semibold text-gray-400 mb-1">Nama Barang (Auto)</label><input type="text" name="nmBarang" readonly class="w-full bg-gray-50 border border-gray-200 text-gray-500 rounded-lg p-2.5 text-sm cursor-not-allowed"></div>
+      <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg space-y-3">
+        <div><label class="block text-xs font-bold text-blue-800 mb-1 uppercase tracking-wide">Lokasi Master (Data Asli)</label><input type="text" id="lokMasterNup" readonly placeholder="Klik ikon kaca pembesar di atas..." class="w-full bg-transparent border-none p-0 text-blue-600 text-sm font-medium focus:ring-0 cursor-not-allowed"></div>
+        <div><label class="block text-xs font-bold text-gray-700 mb-1">Lokasi Fisik (Temuan) *</label><input type="text" name="lokRuangFisik" required placeholder="Contoh: Gedung A, Ruang Rapat" class="w-full border border-blue-200 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white shadow-sm"></div>
+      </div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Kondisi</label><select name="kondisi" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"><option value="Baik">Baik</option><option value="Rusak Ringan">Rusak Ringan</option><option value="Rusak Berat">Rusak Berat</option><option value="Hilang">Hilang</option></select></div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Nama Petugas</label><input type="text" name="nmPetugas" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm"></div>
+      <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Foto Fisik BMN</label><input type="hidden" name="fotoBase64" id="fotoDataNup">
+        <img id="previewNup" class="hidden w-full h-48 object-cover rounded-lg mb-3 shadow-sm border border-gray-200">
+        <button type="button" onclick="openCamera('Nup')" class="w-full py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg flex justify-center items-center gap-2 hover:bg-gray-200 transition"><i class="ph ph-camera text-xl"></i> Ambil Foto Baru</button>
+      </div>
+      <button type="submit" id="btnSubmitNup" class="w-full py-3.5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition flex justify-center items-center"><span class="btn-text">Kirim Hasil Sensus</span><i class="ph ph-spinner animate-spin hidden loader ml-2 text-xl"></i></button>
+    </form>
+
+    <form id="formNonNup" class="space-y-5 bg-white p-5 rounded-xl shadow-sm border border-gray-100 hidden" onsubmit="handleFormSubmit(event, 'formNonNup')">
+      <input type="hidden" name="action" value="submitNonNUP">
+      <input type="hidden" name="kdBarang" value="NON-NUP">
+      <input type="hidden" name="nup" id="autoNupHidden">
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Nama Barang Temuan</label><input type="text" name="nmBarang" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Merk</label><input type="text" name="merk" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none text-sm"></div>
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Tipe</label><input type="text" name="tipe" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none text-sm"></div>
+      </div>
+      <div><label class="block text-xs font-semibold text-gray-600 mb-1">Lokasi Fisik Ruangan</label><input type="text" name="lokRuangFisik" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Kondisi</label><select name="kondisi" required class="w-full border border-gray-300 rounded-lg p-2.5 outline-none text-sm bg-white"><option>Baik</option><option>Rusak Ringan</option><option>Rusak Berat</option></select></div>
+        <div><label class="block text-xs font-semibold text-gray-600 mb-1">Petugas</label><input type="text" name="nmPetugas" required class="w-full border border-gray-300 rounded-lg p-2.5 outline-none text-sm"></div>
+      </div>
+      <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center">
+        <label class="block text-xs font-semibold text-gray-600 mb-2">Foto Fisik BMN</label><input type="hidden" name="fotoBase64" id="fotoDataNonNup">
+        <img id="previewNonNup" class="hidden w-full h-48 object-cover rounded-lg mb-3 shadow-sm border border-gray-200">
+        <button type="button" onclick="openCamera('NonNup')" class="w-full py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg flex justify-center items-center gap-2 hover:bg-gray-200 transition"><i class="ph ph-camera text-xl"></i> Ambil Foto Baru</button>
+      </div>
+      <button type="submit" class="w-full py-3.5 bg-purple-600 text-white font-bold rounded-xl shadow-md hover:bg-purple-700 transition flex justify-center items-center"><span class="btn-text">Kirim Data Temuan</span><i class="ph ph-spinner animate-spin hidden loader ml-2 text-xl"></i></button>
+    </form>
+  </main>
+
+  <div id="cameraModal" class="fixed inset-0 bg-black z-[200] hidden flex-col">
+    <div class="flex justify-between items-center p-4 text-white bg-black/50 absolute top-0 w-full z-10"><span class="font-bold">Ambil Foto BMN</span><button type="button" onclick="closeCamera()" class="p-2 bg-white/20 rounded-full"><i class="ph ph-x text-xl"></i></button></div>
+    <video id="cameraVideo" class="flex-1 w-full h-full object-cover" autoplay playsinline></video>
+    <div class="p-6 bg-black absolute bottom-0 w-full flex justify-center pb-10"><button type="button" onclick="capturePhoto()" class="w-16 h-16 bg-white rounded-full border-4 border-gray-400 active:scale-95 transition-transform"></button></div>
+    <canvas id="cameraCanvas" class="hidden"></canvas>
+  </div>
+
+  <script>
+    // 🔴 GANTI DENGAN URL DEPLOYMENT ANDA 🔴
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFfaRb8WYonDV6P58Y3md6uCu6Now6bKukgT8HQ-zQYyQyVZziNaY4hdxWN2g6ADUy2Q/exec"; 
+
+    let currentFormType = ''; let videoStream = null;
+
+    function switchTab(tab) {
+      document.getElementById('formNup').classList.toggle('hidden', tab !== 'nup'); document.getElementById('formNonNup').classList.toggle('hidden', tab !== 'nonnup');
+      document.getElementById('tabNUP').className = tab === 'nup' ? 'w-1/2 py-3 text-center tab-active transition' : 'w-1/2 py-3 text-center text-gray-500 transition';
+      document.getElementById('tabNonNUP').className = tab === 'nonnup' ? 'w-1/2 py-3 text-center tab-active transition' : 'w-1/2 py-3 text-center text-gray-500 transition';
+    }
+
+    function showNotification(message, type = 'success') {
+      const container = document.getElementById('notification-container'); const toast = document.createElement('div');
+      toast.className = `transform transition-all duration-300 ease-out -translate-y-10 opacity-0 flex items-center p-4 bg-white rounded-xl shadow-xl border-l-4 pointer-events-auto ${type === 'success' ? 'border-green-500' : 'border-red-500'}`;
+      toast.innerHTML = `<div class="${type === 'success' ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'} rounded-full p-1.5 mr-3"><i class="ph-fill ${type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'} text-2xl"></i></div><div class="text-sm font-semibold text-gray-700 leading-snug">${message}</div>`;
+      container.appendChild(toast); requestAnimationFrame(() => { toast.classList.remove('-translate-y-10', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100'); });
+      setTimeout(() => { toast.classList.remove('translate-y-0', 'opacity-100'); toast.classList.add('-translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 4000);
+    }
+
+    document.getElementById('inputKdBarang').addEventListener('input', unlockForm);
+    document.getElementById('inputNup').addEventListener('input', unlockForm);
+
+    function unlockForm() {
+      const btnSubmit = document.getElementById('btnSubmitNup');
+      btnSubmit.disabled = false; btnSubmit.classList.remove('bg-gray-400', 'cursor-not-allowed'); btnSubmit.classList.add('bg-blue-600', 'hover:bg-blue-700');
+      btnSubmit.querySelector('.btn-text').innerText = "Kirim Hasil Sensus";
+    }
+
+    async function autoFillNup() {
+      const form = document.getElementById('formNup'); const kdBarang = form.kdBarang.value; const nup = form.nup.value;
+      if(!kdBarang || !nup) return showNotification("Isi Kode Barang dan NUP terlebih dahulu", "error");
+      const btnSubmit = document.getElementById('btnSubmitNup'); const btnText = btnSubmit.querySelector('.btn-text');
+
+      try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?api=getBMNInfo&kdBarang=${kdBarang}&nup=${nup}`);
+        const result = await response.json();
+        if(result.success) {
+           form.nmBarang.value = result.data.nmBarang; document.getElementById('lokMasterNup').value = result.data.lokRuang; 
+           const bmnStatus = String(result.data.status).trim();
+           if (bmnStatus === "Pending" || bmnStatus === "Telah Diverifikasi") {
+               showNotification(`DITOLAK: BMN ini sudah disensus (${bmnStatus})!`, "error");
+               btnSubmit.disabled = true; btnSubmit.classList.add('bg-gray-400', 'cursor-not-allowed'); btnSubmit.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+               btnText.innerText = `Sudah Disensus (${bmnStatus})`;
+           } else { showNotification("Data BMN ditemukan! Silakan isi lokasi fisik.", "success"); unlockForm(); }
+        } else { showNotification(result.message, "error"); form.nmBarang.value = ""; document.getElementById('lokMasterNup').value = ""; unlockForm(); }
+      } catch (err) { showNotification("Gagal menghubungi server.", "error"); }
+    }
+
+    function openCamera(formType) {
+      currentFormType = formType; const modal = document.getElementById('cameraModal'); const video = document.getElementById('cameraVideo');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(stream => { videoStream = stream; video.srcObject = stream; }).catch(err => { showNotification("Gagal akses kamera.", "error"); closeCamera(); });
+    }
+    function closeCamera() { if(videoStream) videoStream.getTracks().forEach(track => track.stop()); document.getElementById('cameraModal').classList.add('hidden'); document.getElementById('cameraModal').classList.remove('flex'); }
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo'); const canvas = document.getElementById('cameraCanvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64Image = canvas.toDataURL('image/jpeg', 0.6);
+      document.getElementById(`fotoData${currentFormType}`).value = base64Image;
+      const preview = document.getElementById(`preview${currentFormType}`); preview.src = base64Image; preview.classList.remove('hidden');
+      closeCamera(); showNotification("Foto berhasil diambil!", "success");
+    }
+
+    async function handleFormSubmit(e, formId) {
+      e.preventDefault(); const form = document.getElementById(formId); const btnText = form.querySelector('.btn-text'); const loader = form.querySelector('.loader');
+      const payload = Object.fromEntries(new FormData(form).entries());
+      if (!payload.fotoBase64) return showNotification("Silakan ambil foto fisik terlebih dahulu!", "error");
+      if (formId === 'formNonNup') payload.nup = `NEW-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      btnText.innerText = "Memproses..."; loader.classList.remove('hidden'); form.querySelector('button[type="submit"]').disabled = true;
+
+      try {
+        const response = await fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+        const result = await response.json();
+        if(result.success) {
+           showNotification("Data sensus berhasil dikirim!", "success"); form.reset();
+           document.getElementById(`preview${formId === 'formNup' ? 'Nup' : 'NonNup'}`).classList.add('hidden');
+           if(formId === 'formNup') document.getElementById('lokMasterNup').value = "";
+           unlockForm();
+        } else { showNotification(result.message, "error"); }
+      } catch (error) { showNotification("Kesalahan jaringan. Gagal mengirim.", "error"); } 
+      finally {
+        if (!form.querySelector('button[type="submit"]').disabled || formId === 'formNonNup') {
+          btnText.innerText = formId === 'formNup' ? "Kirim Hasil Sensus" : "Kirim Data Temuan";
+          form.querySelector('button[type="submit"]').disabled = false;
+        }
+        loader.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
